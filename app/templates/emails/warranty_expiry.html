@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warranty Expiry Notifications</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: #28a745;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            margin: -30px -30px 30px -30px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .asset-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .asset-item.expired {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .asset-item.expiring-soon {
+            border-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Warranty Expiry Notifications</h1>
+        </div>
+        
+        <p>Hello {{ user.name }},</p>
+        
+        <div class="warning">
+            <strong>Alert:</strong> The following {{ assets|length }} asset(s) have warranties expiring within the next {{ days }} days.
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Asset ID</th>
+                    <th>Type</th>
+                    <th>Brand</th>
+                    <th>Model</th>
+                    <th>Warranty Expiry</th>
+                    <th>Assigned To</th>
+                    <th>Days Until Expiry</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asset in assets %}
+                <tr class="{% if asset.days_until_warranty_expiry <= 0 %}expired{% elif asset.days_until_warranty_expiry <= 7 %}expiring-soon{% endif %}">
+                    <td>{{ asset.asset_id }}</td>
+                    <td>{{ asset.asset_type }}</td>
+                    <td>{{ asset.brand }}</td>
+                    <td>{{ asset.model }}</td>
+                    <td>{{ asset.warranty_expiry.strftime('%Y-%m-%d') if asset.warranty_expiry else 'N/A' }}</td>
+                    <td>{{ asset.employee.name if asset.employee else 'Unassigned' }}</td>
+                    <td>
+                        {% if asset.warranty_expiry %}
+                            {% set days_until = (asset.warranty_expiry - now()).days %}
+                            {% if days_until <= 0 %}
+                                <span style="color: #dc3545; font-weight: bold;">EXPIRED</span>
+                            {% elif days_until <= 7 %}
+                                <span style="color: #ffc107; font-weight: bold;">{{ days_until }} days</span>
+                            {% else %}
+                                {{ days_until }} days
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #6c757d;">N/A</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 30px;">
+            <h3>Recommended Actions:</h3>
+            <ul>
+                <li>Review assets with expiring warranties</li>
+                <li>Consider extended warranty options for critical equipment</li>
+                <li>Plan budget for potential replacements or repairs</li>
+                <li>Update asset records in the IT Management System</li>
+                <li>Schedule maintenance checks for assets nearing warranty expiry</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated notification from the IT Management System.</p>
+            <p>Please do not reply to this email. For questions, contact your IT department.</p>
+            <p>Generated on: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+    </div>
+</body>
+</html>

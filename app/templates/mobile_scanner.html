@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Asset Scanner - ITAM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .mobile-scanner-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .scanner-video {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid #007bff;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 100px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background: rgba(0, 123, 255, 0.1);
+        }
+
+        .scan-result {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .asset-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .asset-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .mobile-btn {
+            min-height: 44px;
+            padding: 12px 16px;
+            font-size: 16px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .scan-history {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header style="background: #343a40; color: white; padding: 1rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <button onclick="goBack()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2 style="margin: 0; font-size: 1.2rem;">Mobile Asset Scanner</h2>
+            <div style="width: 40px;"></div>
+        </div>
+    </header>
+
+    <div class="container py-3">
+        <!-- Scanner Section -->
+        <div class="mobile-scanner-container">
+            <h4><i class="fas fa-qrcode me-2"></i>Scan Asset Barcode</h4>
+
+            <!-- Camera Selection (if multiple cameras) -->
+            <div class="mb-3">
+                <label for="cameraSelect" class="form-label">Camera:</label>
+                <select class="form-select" id="cameraSelect">
+                    <option value="">Select Camera...</option>
+                </select>
+            </div>
+
+            <!-- Video Element -->
+            <div style="position: relative; text-align: center;">
+                <video id="scannerVideo" class="scanner-video" playsinline muted></video>
+                <div class="scanner-overlay" id="scannerOverlay"></div>
+            </div>
+
+            <!-- Scanner Controls -->
+            <div class="d-flex gap-2 mt-3">
+                <button id="startScanBtn" class="btn btn-primary mobile-btn" onclick="startScanning()">
+                    <i class="fas fa-play me-2"></i>Start Scanning
+                </button>
+                <button id="stopScanBtn" class="btn btn-secondary mobile-btn" onclick="stopScanning()" disabled>
+                    <i class="fas fa-stop me-2"></i>Stop
+                </button>
+            </div>
+        </div>
+
+        <!-- Scan Result -->
+        <div id="scanResult" class="scan-result" style="display: none;">
+            <h5><i class="fas fa-check-circle text-success me-2"></i>Asset Found</h5>
+            <div id="assetInfo" class="asset-info">
+                <!-- Asset information will be populated here -->
+            </div>
+
+            <!-- Asset Actions -->
+            <div class="asset-actions">
+                <button class="btn btn-success mobile-btn" onclick="updateAssetStatus()">
+                    <i class="fas fa-edit me-2"></i>Update Status
+                </button>
+                <button class="btn btn-info mobile-btn" onclick="viewAssetDetails()">
+                    <i class="fas fa-eye me-2"></i>View Details
+                </button>
+                <button class="btn btn-warning mobile-btn" onclick="scanAnother()">
+                    <i class="fas fa-redo me-2"></i>Scan Another
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Scans -->
+        <div class="mobile-card mt-4">
+            <div class="mobile-card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Scans</h5>
+            </div>
+            <div class="mobile-card-body">
+                <div id="scanHistory" class="scan-history">
+                    <p class="text-muted">No recent scans</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Entry Option -->
+    <div class="container mt-3">
+        <div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+            <p class="mb-2">Can't scan barcode?</p>
+            <button class="btn btn-outline-primary" onclick="showManualEntry()">
+                <i class="fas fa-keyboard me-2"></i>Enter Asset ID Manually
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let scanner = null;
+        let videoStream = null;
+        let scanHistory = [];
+
+        // Initialize camera on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCamera();
+        });
+
+        async function initializeCamera() {
+            try {
+                const cameras = await getCameras();
+                const cameraSelect = document.getElementById('cameraSelect');
+
+                cameras.forEach((camera, index) => {
+                    const option = document.createElement('option');
+                    option.value = camera.deviceId;
+                    option.textContent = camera.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+
+                if (cameras.length > 0) {
+                    cameraSelect.value = cameras[0].deviceId;
+                }
+            } catch (error) {
+                console.error('Error initializing camera:', error);
+                alert('Unable to access camera. Please check permissions.');
+            }
+        }
+
+        async function getCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                return devices.filter(device => device.kind === 'videoinput');
+            } catch (error) {
+                console.error('Error getting cameras:', error);
+                return [];
+            }
+        }
+
+        async function startScanning() {
+            try {
+                const cameraSelect = document.getElementById('cameraSelect');
+                const cameraId = cameraSelect.value;
+
+                if (!cameraId) {
+                    alert('Please select a camera first');
+                    return;
+                }
+
+                const constraints = {
+                    video: {
+                        deviceId: { exact: cameraId },
+                        facingMode: 'environment' // Use back camera on mobile
+                    }
+                };
+
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('scannerVideo');
+                video.srcObject = videoStream;
+
+                // Wait for video to be ready
+                video.onloadedmetadata = function() {
+                    video.play();
+                    document.getElementById('startScanBtn').disabled = true;
+                    document.getElementById('stopScanBtn').disabled = false;
+
+                    // Start barcode detection (simplified for demo)
+                    startBarcodeDetection();
+                };
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                alert('Unable to start camera. Please check permissions.');
+            }
+        }
+
+        function stopScanning() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+
+            const video = document.getElementById('scannerVideo');
+            video.srcObject = null;
+
+            document.getElementById('startScanBtn').disabled = false;
+            document.getElementById('stopScanBtn').disabled = true;
+        }
+
+        function startBarcodeDetection() {
+            // Simplified barcode detection for demo
+            // In a real implementation, you would use a library like ZXing or QuaggaJS
+            const video = document.getElementById('scannerVideo');
+
+            // Simulate barcode detection after 3 seconds
+            setTimeout(() => {
+                if (videoStream) {
+                    simulateBarcodeDetection();
+                }
+            }, 3000);
+        }
+
+        function simulateBarcodeDetection() {
+            // Simulate finding an asset
+            const mockAsset = {
+                id: 'AST-' + Math.floor(Math.random() * 1000),
+                name: 'Dell Laptop',
+                model: 'Latitude 5420',
+                serial: 'DELL' + Math.floor(Math.random() * 1000000),
+                location: 'Floor 2, Office A',
+                status: 'Active'
+            };
+
+            showScanResult(mockAsset);
+        }
+
+        function showScanResult(asset) {
+            stopScanning();
+
+            const assetInfo = document.getElementById('assetInfo');
+            assetInfo.innerHTML = `
+                <h6>${asset.name}</h6>
+                <p class="mb-1"><strong>Asset ID:</strong> ${asset.id}</p>
+                <p class="mb-1"><strong>Model:</strong> ${asset.model}</p>
+                <p class="mb-1"><strong>Serial:</strong> ${asset.serial}</p>
+                <p class="mb-1"><strong>Location:</strong> ${asset.location}</p>
+                <p class="mb-2"><strong>Status:</strong>
+                    <span class="badge bg-success">${asset.status}</span>
+                </p>
+            `;
+
+            document.getElementById('scanResult').style.display = 'block';
+
+            // Add to scan history
+            scanHistory.unshift({
+                timestamp: new Date(),
+                asset: asset
+            });
+
+            updateScanHistory();
+        }
+
+        function updateScanHistory() {
+            const historyContainer = document.getElementById('scanHistory');
+
+            if (scanHistory.length === 0) {
+                historyContainer.innerHTML = '<p class="text-muted">No recent scans</p>';
+                return;
+            }
+
+            historyContainer.innerHTML = scanHistory.map(scan => `
+                <div style="padding: 0.5rem; border-bottom: 1px solid #dee2e6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${scan.asset.name}</strong><br>
+                            <small class="text-muted">${scan.asset.id}</small>
+                        </div>
+                        <small class="text-muted">${scan.timestamp.toLocaleTimeString()}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateAssetStatus() {
+            alert('Asset status update feature would be implemented here');
+        }
+
+        function viewAssetDetails() {
+            alert('Asset details view would be implemented here');
+        }
+
+        function scanAnother() {
+            document.getElementById('scanResult').style.display = 'none';
+            startScanning();
+        }
+
+        function showManualEntry() {
+            const assetId = prompt('Enter Asset ID:');
+            if (assetId) {
+                // Simulate manual entry lookup
+                const mockAsset = {
+                    id: assetId,
+                    name: 'Manual Entry Asset',
+                    model: 'Various',
+                    serial: 'N/A',
+                    location: 'Manual Entry',
+                    status: 'Active'
+                };
+                showScanResult(mockAsset);
+            }
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        // Handle page visibility changes (pause/resume camera)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && videoStream) {
+                stopScanning();
+            }
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (videoStream) {
+                stopScanning();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ action }} Asset</h2>
+<form method="post" class="row g-3">
+  <div class="col-md-4">
+    <label class="form-label">Asset ID</label>
+    <input type="text" class="form-control" name="asset_id" value="{{ asset.asset_id if asset else '' }}" {% if action=='Edit' %}readonly{% endif %} required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Type</label>
+    <input type="text" class="form-control" name="asset_type" value="{{ asset.asset_type if asset else '' }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Brand</label>
+    <input type="text" class="form-control" name="brand" value="{{ asset.brand if asset else '' }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Model</label>
+    <input type="text" class="form-control" name="model" value="{{ asset.model if asset else '' }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Serial No</label>
+    <input type="text" class="form-control" name="serial_no" value="{{ asset.serial_no if asset else '' }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Purchase Date</label>
+    <input type="date" class="form-control" name="purchase_date" value="{{ asset.purchase_date.strftime('%Y-%m-%d') if asset and asset.purchase_date }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Warranty Expiry</label>
+    <input type="date" class="form-control" name="warranty_expiry" value="{{ asset.warranty_expiry.strftime('%Y-%m-%d') if asset and asset.warranty_expiry }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Status</label>
+    <input type="text" class="form-control" name="status" value="{{ asset.status if asset else '' }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Assigned To</label>
+    <select class="form-select" name="assigned_to">
+      <option value="">-- None --</option>
+      {% for emp in employees %}
+        <option value="{{ emp.id }}" {% if asset and asset.assigned_to==emp.id %}selected{% endif %}>{{ emp.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12">
+    <button class="btn btn-primary">{{ action }}</button>
+    <a href="{{ url_for('main.assets') }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

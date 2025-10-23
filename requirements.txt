@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+python-dotenv
+pandas
+openpyxl
+reportlab
+Flask-Mail
+APScheduler
+werkzeug

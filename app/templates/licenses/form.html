@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ action }} Software License</h2>
+<form method="post" class="w-50 mx-auto">
+  <div class="mb-3">
+    <label class="form-label">Software Name</label>
+    <input type="text" class="form-control" name="software_name" value="{{ lic.software_name if lic else '' }}" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">License Key</label>
+    <input type="text" class="form-control" name="license_key" value="{{ lic.license_key if lic else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Expiry Date</label>
+    <input type="date" class="form-control" name="expiry_date" value="{{ lic.expiry_date.strftime('%Y-%m-%d') if lic and lic.expiry_date else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Assigned To</label>
+    <select class="form-select" name="assigned_to">
+      <option value="">-- None --</option>
+      {% for emp in employees %}<option value="{{ emp.id }}" {% if lic and lic.assigned_to==emp.id %}selected{% endif %}>{{ emp.name }}</option>{% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-primary">{{ action }}</button>
+  <a href="{{ url_for('main.licenses') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-1">IT Dashboard</h1>
+                    <p class="text-muted mb-0" id="current-time"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3 pending-maintenance-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ pending_maintenance|length }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Pending Maintenance</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3 assets-repair-icon">
+                        <i class="fas fa-wrench"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ assets_repair }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Assets Under Repair</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3 active-licenses-icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ active_licenses|length }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Active Licenses</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3 upcoming-expirations-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ licenses_expiring|length + warranties_expiring|length }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Upcoming Expirations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Tables Section -->
+    <div class="row mb-4">
+        <!-- License Expiry Chart -->
+        <div class="col-xl-8 col-lg-7 col-md-12 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>License Expiry by Month</h5>
+                    <div class="card-actions">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshChart('licenseExpiryChart')">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body chart-area">
+                    <canvas id="licenseExpiryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expiring Licenses Table -->
+        <div class="col-xl-4 col-lg-5 col-md-12 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Licenses Expiring Soon</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Software</th>
+                                    <th scope="col">Expiry Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lic in licenses_expiring %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-certificate text-primary me-2"></i>
+                                            {{ lic.software_name }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">{{ lic.expiry_date }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not licenses_expiring %}
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted py-4">
+                                        <i class="fas fa-check-circle me-2"></i>No licenses expiring soon
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2 text-info"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-sm-6">
+                            <a class="btn btn-outline-primary w-100 action-btn" href="{{ url_for('main.license_new') }}">
+                                <i class="fas fa-plus-circle me-2"></i>Add License
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a class="btn btn-outline-success w-100 action-btn" href="{{ url_for('main.maintenance_new') }}">
+                                <i class="fas fa-cog me-2"></i>Schedule Maintenance
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a class="btn btn-outline-warning w-100 action-btn" href="{{ url_for('main.reports') }}">
+                                <i class="fas fa-chart-line me-2"></i>View Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chart-area { height: 360px; }
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 15px;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, currentColor 0%, rgba(255,255,255,0.2) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+.stat-card:hover .stat-icon {
+    transform: scale(1.1);
+}
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.table-responsive {
+    max-height: 300px;
+    overflow-y: auto;
+}
+.action-btn {
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.card {
+    border-radius: 15px;
+}
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.pending-maintenance-icon {
+    color: #ffc107;
+}
+.assets-repair-icon {
+    color: #dc3545;
+}
+.active-licenses-icon {
+    color: #28a745;
+}
+.upcoming-expirations-icon {
+    color: #6f42c1;
+}
+</style>
+
+<script>
+// Update current time
+document.addEventListener('DOMContentLoaded', function() {
+    updateTime();
+    setInterval(updateTime, 1000);
+    animateCounters();
+    initializeCharts();
+    addInteractiveEffects();
+});
+
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleString();
+    document.getElementById('current-time').textContent = timeString;
+}
+
+function animateCounters() {
+    const counters = document.querySelectorAll('.stat-number');
+    counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target'));
+        const increment = target / 50;
+        let current = 0;
+        
+        const updateCounter = () => {
+            current += increment;
+            if (current < target) {
+                counter.textContent = Math.ceil(current);
+                setTimeout(updateCounter, 50);
+            } else {
+                counter.textContent = target;
+            }
+        };
+        updateCounter();
+    });
+}
+
+function initializeCharts() {
+    const labels = {{ expiry_months|tojson|safe }};
+    const dataVals = {{ expiry_counts|tojson|safe }};
+    const total = (dataVals || []).reduce((a,b)=>a+b,0);
+    const canvas = document.getElementById('licenseExpiryChart');
+    if (!total) {
+        canvas.replaceWith(Object.assign(document.createElement('div'), { className: 'text-muted text-center py-5', innerText: 'No license expiry data' }));
+        return;
+    }
+    const ctx = canvas.getContext('2d');
+    const barColor = '#4e79a7';
+    window.licenseExpiryChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Licenses Expiring', data: dataVals, backgroundColor: barColor, borderRadius: 6, borderSkipped: false }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.08)' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+function addInteractiveEffects() {
+    // Add hover effects to cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Add click effects to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+}
+
+function refreshChart(chartId) {
+    if (window[chartId]) {
+        window[chartId].destroy();
+        initializeCharts();
+        showNotification('Chart refreshed successfully!', 'success');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Add ripple effect styles
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

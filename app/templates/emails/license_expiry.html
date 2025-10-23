@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>License Expiry Notifications</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            margin: -30px -30px 30px -30px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .license-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .license-item.expired {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .license-item.expiring-soon {
+            border-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>License Expiry Notifications</h1>
+        </div>
+        
+        <p>Hello {{ user.name }},</p>
+        
+        <div class="warning">
+            <strong>Alert:</strong> The following {{ licenses|length }} software license(s) are expiring within the next {{ days }} days.
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Software Name</th>
+                    <th>License Key</th>
+                    <th>Expiry Date</th>
+                    <th>Assigned To</th>
+                    <th>Days Until Expiry</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for license in licenses %}
+                <tr class="{% if license.days_until_expiry <= 0 %}expired{% elif license.days_until_expiry <= 7 %}expiring-soon{% endif %}">
+                    <td>{{ license.software_name }}</td>
+                    <td>{{ license.license_key }}</td>
+                    <td>{{ license.expiry_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ license.employee.name if license.employee else 'Unassigned' }}</td>
+                    <td>
+                        {% set days_until = (license.expiry_date - now()).days %}
+                        {% if days_until <= 0 %}
+                            <span style="color: #dc3545; font-weight: bold;">EXPIRED</span>
+                        {% elif days_until <= 7 %}
+                            <span style="color: #ffc107; font-weight: bold;">{{ days_until }} days</span>
+                        {% else %}
+                            {{ days_until }} days
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 30px;">
+            <h3>Recommended Actions:</h3>
+            <ul>
+                <li>Review the expiring licenses and plan renewals</li>
+                <li>Contact software vendors for renewal quotes</li>
+                <li>Update license records in the IT Management System</li>
+                <li>Notify affected users about potential service interruptions</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated notification from the IT Management System.</p>
+            <p>Please do not reply to this email. For questions, contact your IT department.</p>
+            <p>Generated on: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+    </div>
+</body>
+</html>

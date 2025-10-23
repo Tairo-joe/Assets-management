@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Assets</h2>
+  <div>
+    {% if current_user.role in ['Admin', 'IT', 'Manager'] %}
+      <a href="{{ url_for('main.export_assets_csv') }}" class="btn btn-outline-primary me-2">📥 Export CSV</a>
+      <a href="{{ url_for('main.export_assets_excel') }}" class="btn btn-outline-success me-2">📊 Export Excel</a>
+    {% endif %}
+    {% if current_user.role in ['Admin', 'IT'] %}
+      <a href="{{ url_for('main.asset_new') }}" class="btn btn-success">Add Asset</a>
+    {% endif %}
+  </div>
+</div>
+<table class="table table-hover">
+  <thead class="table-light">
+    <tr>
+      <th>ID</th><th>Type</th><th>Brand</th><th>Model</th><th>Status</th><th>Assigned To</th>
+      {% if current_user.role in ['Admin', 'IT'] %}<th>Actions</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for a in assets %}
+    <tr>
+      <td>{{ a.asset_id }}</td><td>{{ a.asset_type }}</td><td>{{ a.brand }}</td><td>{{ a.model }}</td><td>{{ a.status }}</td><td>{{ a.employee.name if a.employee else '' }}</td>
+      {% if current_user.role in ['Admin', 'IT'] %}
+        <td>
+          <a href="{{ url_for('main.asset_edit', asset_id=a.id) }}" class="btn btn-sm btn-primary">Edit</a>
+          <form action="{{ url_for('main.asset_delete', asset_id=a.id) }}" method="post" style="display:inline-block" onsubmit="return confirm('Delete asset?');">
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      {% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

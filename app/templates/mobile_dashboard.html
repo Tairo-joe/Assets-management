@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- Mobile-Optimized IT Dashboard for Field Technicians -->
+
+<div class="mobile-container">
+    <!-- Quick Stats Cards -->
+    <div class="row g-2 mb-4">
+        <div class="col-6">
+            <div class="mobile-stat-card">
+                <div class="mobile-stat-icon" style="color: #ffc107;">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="mobile-stat-value">{{ pending_maintenance|length }}</div>
+                <div class="mobile-stat-label">Pending Work</div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="mobile-stat-card">
+                <div class="mobile-stat-icon" style="color: #dc3545;">
+                    <i class="fas fa-wrench"></i>
+                </div>
+                <div class="mobile-stat-value">{{ assets_repair }}</div>
+                <div class="mobile-stat-label">Under Repair</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mobile-card">
+        <div class="mobile-card-header">
+            <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+        </div>
+        <div class="mobile-card-body">
+            <div class="row g-2">
+                <div class="col-6">
+                    <button class="btn btn-primary mobile-btn w-100" onclick="openScanner()">
+                        <i class="fas fa-qrcode me-2"></i>Scan Asset
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button class="btn btn-success mobile-btn w-100" onclick="showAssetList()">
+                        <i class="fas fa-list me-2"></i>Asset List
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button class="btn btn-warning mobile-btn w-100" onclick="showMaintenanceTasks()">
+                        <i class="fas fa-tasks me-2"></i>My Tasks
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button class="btn btn-info mobile-btn w-100" onclick="syncOfflineData()">
+                        <i class="fas fa-sync me-2"></i>Sync Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Assets -->
+    <div class="mobile-card mt-3">
+        <div class="mobile-card-header">
+            <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Assets</h5>
+        </div>
+        <div class="mobile-card-body">
+            {% for asset in recent_assets[:5] %}
+            <div class="mobile-asset-card">
+                <div style="display: flex; justify-content: between; align-items: center;">
+                    <div>
+                        <h6 class="mb-1">{{ asset.name }}</h6>
+                        <small class="text-muted">{{ asset.asset_tag }}</small>
+                    </div>
+                    <span class="badge bg-{{ 'success' if asset.status == 'Active' else 'warning' }}">
+                        {{ asset.status }}
+                    </span>
+                </div>
+                <div class="mobile-asset-actions">
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewAsset('{{ asset.id }}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="scanAsset('{{ asset.asset_tag }}')">
+                        <i class="fas fa-qrcode"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Pending Maintenance Tasks -->
+    <div class="mobile-card mt-3">
+        <div class="mobile-card-header">
+            <h5 class="mb-0"><i class="fas fa-wrench me-2"></i>Pending Tasks</h5>
+        </div>
+        <div class="mobile-card-body">
+            {% for task in pending_maintenance[:3] %}
+            <div style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
+                <div style="display: flex; justify-content: between; align-items: center;">
+                    <div>
+                        <strong>{{ task.asset_name }}</strong><br>
+                        <small class="text-muted">{{ task.maintenance_type }}</small>
+                    </div>
+                    <button class="btn btn-sm btn-warning" onclick="startTask('{{ task.id }}')">
+                        Start
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Offline Status Indicator -->
+    <div id="offlineIndicator" class="offline-indicator" style="display: none;">
+        <i class="fas fa-wifi-slash me-2"></i>Offline Mode
+    </div>
+</div>
+
+<!-- Asset Scanner Modal -->
+<div id="assetScannerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000;">
+    <div style="position: relative; height: 100%; display: flex; flex-direction: column;">
+        <div style="padding: 1rem; background: #343a40; color: white;">
+            <button onclick="closeScanner()" style="background: none; border: none; color: white; font-size: 1.5rem; float: right;">&times;</button>
+            <h4 style="margin: 0;">Asset Scanner</h4>
+        </div>
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+            <video id="modalScannerVideo" style="max-width: 100%; max-height: 70vh; border-radius: 8px;" playsinline muted></video>
+        </div>
+        <div style="padding: 1rem; background: white;">
+            <button id="modalStartScan" class="btn btn-primary mobile-btn w-100" onclick="startModalScanning()">
+                <i class="fas fa-camera me-2"></i>Start Scanning
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mobile-specific JavaScript for field technician dashboard
+let modalScanner = null;
+let modalVideoStream = null;
+
+function openScanner() {
+    const modal = document.getElementById('assetScannerModal');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeScanner() {
+    const modal = document.getElementById('assetScannerModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+
+    if (modalVideoStream) {
+        modalVideoStream.getTracks().forEach(track => track.stop());
+        modalVideoStream = null;
+    }
+}
+
+async function startModalScanning() {
+    try {
+        const constraints = {
+            video: {
+                facingMode: 'environment'
+            }
+        };
+
+        modalVideoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const video = document.getElementById('modalScannerVideo');
+        video.srcObject = modalVideoStream;
+
+        video.onloadedmetadata = function() {
+            video.play();
+            document.getElementById('modalStartScan').innerHTML = '<i class="fas fa-stop me-2"></i>Stop Scanning';
+            document.getElementById('modalStartScan').onclick = stopModalScanning;
+
+            // Simulate asset detection
+            setTimeout(() => {
+                if (modalVideoStream) {
+                    detectAssetInModal();
+                }
+            }, 3000);
+        };
+    } catch (error) {
+        console.error('Error starting modal camera:', error);
+        alert('Unable to access camera');
+    }
+}
+
+function stopModalScanning() {
+    if (modalVideoStream) {
+        modalVideoStream.getTracks().forEach(track => track.stop());
+        modalVideoStream = null;
+    }
+
+    const video = document.getElementById('modalScannerVideo');
+    video.srcObject = null;
+
+    document.getElementById('modalStartScan').innerHTML = '<i class="fas fa-camera me-2"></i>Start Scanning';
+    document.getElementById('modalStartScan').onclick = startModalScanning;
+}
+
+function detectAssetInModal() {
+    // Simulate finding an asset
+    const assetId = 'AST-' + Math.floor(Math.random() * 1000);
+
+    if (confirm(`Asset detected: ${assetId}\n\nView asset details?`)) {
+        closeScanner();
+        // Navigate to asset details page
+        window.location.href = `/assets/${assetId}`;
+    }
+}
+
+function showAssetList() {
+    window.location.href = '/assets';
+}
+
+function showMaintenanceTasks() {
+    window.location.href = '/maintenance';
+}
+
+function syncOfflineData() {
+    // Check if online
+    if (navigator.onLine) {
+        // Simulate syncing offline data
+        showNotification('Syncing data...', 'info');
+
+        setTimeout(() => {
+            showNotification('Data synced successfully!', 'success');
+        }, 2000);
+    } else {
+        showNotification('No internet connection for sync', 'warning');
+    }
+}
+
+function viewAsset(assetId) {
+    window.location.href = `/assets/${assetId}`;
+}
+
+function scanAsset(assetTag) {
+    // Use the asset tag for scanning
+    if (confirm(`Scan asset with tag: ${assetTag}?`)) {
+        openScanner();
+    }
+}
+
+function startTask(taskId) {
+    window.location.href = `/maintenance/${taskId}/start`;
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.style.cssText = 'position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px; max-width: 90%;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Offline detection
+window.addEventListener('online', function() {
+    const indicator = document.getElementById('offlineIndicator');
+    if (indicator) {
+        indicator.style.display = 'none';
+    }
+    showNotification('Back online!', 'success');
+});
+
+window.addEventListener('offline', function() {
+    const indicator = document.getElementById('offlineIndicator');
+    if (indicator) {
+        indicator.style.display = 'block';
+    }
+    showNotification('Gone offline - some features may be limited', 'warning');
+});
+
+// Initialize offline status
+document.addEventListener('DOMContentLoaded', function() {
+    if (!navigator.onLine) {
+        document.getElementById('offlineIndicator').style.display = 'block';
+    }
+});
+</script>
+
+<style>
+/* Mobile-specific styles for this dashboard */
+.mobile-asset-card {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: white;
+    transition: transform 0.2s ease;
+}
+
+.mobile-asset-card:active {
+    transform: scale(0.98);
+}
+
+.mobile-asset-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.btn-sm {
+    min-height: 36px;
+    padding: 6px 12px;
+}
+</style>
+{% endblock %}

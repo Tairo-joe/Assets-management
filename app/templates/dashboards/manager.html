@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-1">Manager Dashboard</h1>
+                    <p class="text-muted mb-0" id="current-time"></p>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="exportReport()">
+                        <i class="fas fa-download me-2"></i>Export Report
+                    </button>
+                    <a class="btn btn-info btn-sm" href="{{ url_for('main.reports') }}">
+                        <i class="fas fa-chart-line me-2"></i>View Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3" style="color: #007bff; font-size: 2.5rem;">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ total_assets }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Total Assets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3" style="color: #28a745; font-size: 2.5rem;">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ maintenance_cost }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Maintenance Cost</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3" style="color: #ffc107; font-size: 2.5rem;">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ active_licenses }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Active Licenses</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3" style="color: #dc3545; font-size: 2.5rem;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ licenses_expiring|length + warranties_expiring|length }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Items Expiring Soon</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Information Section -->
+    <div class="row mb-4">
+        <!-- Asset Status Chart -->
+        <div class="col-xl-6 col-lg-6 col-md-12 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Asset Status Distribution</h5>
+                    <div class="card-actions">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshChart('assetStatusChart')">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="assetStatusChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Expirations -->
+        <div class="col-xl-6 col-lg-6 col-md-12 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2 text-warning"></i>Upcoming Expirations</h5>
+                </div>
+                <div class="card-body">
+                    <!-- License Expirations -->
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3"><i class="fas fa-certificate me-2"></i>Licenses Expiring Soon</h6>
+                        <div class="expiring-items">
+                            {% for lic in licenses_expiring %}
+                            <div class="expiring-item d-flex align-items-center p-2 mb-2 rounded" style="background-color: #fff3cd; border-left: 4px solid #ffc107;">
+                                <i class="fas fa-file-contract text-warning me-3"></i>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">{{ lic.software_name }}</div>
+                                    <small class="text-muted">Expires: {{ lic.expiry_date }}</small>
+                                </div>
+                                <span class="badge bg-warning text-dark">{{ (lic.expiry_date - date.today()).days }} days</span>
+                            </div>
+                            {% endfor %}
+                            {% if not licenses_expiring %}
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-check-circle me-2 text-success"></i>No licenses expiring soon
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Warranty Expirations -->
+                    <div>
+                        <h6 class="text-danger mb-3"><i class="fas fa-shield-alt me-2"></i>Warranties Expiring Soon</h6>
+                        <div class="expiring-items">
+                            {% for asset in warranties_expiring %}
+                            <div class="expiring-item d-flex align-items-center p-2 mb-2 rounded" style="background-color: #f8d7da; border-left: 4px solid #dc3545;">
+                                <i class="fas fa-wrench text-danger me-3"></i>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">{{ asset.asset_id }}</div>
+                                    <small class="text-muted">Expires: {{ asset.warranty_expiry }}</small>
+                                </div>
+                                <span class="badge bg-danger">{{ (asset.warranty_expiry - date.today()).days }} days</span>
+                            </div>
+                            {% endfor %}
+                            {% if not warranties_expiring %}
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-check-circle me-2 text-success"></i>No warranties expiring soon
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2 text-info"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-sm-6">
+                            <a class="btn btn-outline-primary w-100 action-btn" href="{{ url_for('main.asset_new') }}">
+                                <i class="fas fa-plus-circle me-2"></i>Add Asset
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a class="btn btn-outline-success w-100 action-btn" href="{{ url_for('main.reports') }}">
+                                <i class="fas fa-chart-bar me-2"></i>View Reports
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <button type="button" class="btn btn-outline-warning w-100 action-btn" onclick="showNotification('Feature coming soon!', 'warning')">
+                                <i class="fas fa-users me-2"></i>Manage Teams
+                            </button>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a class="btn btn-outline-info w-100 action-btn" href="{{ url_for('main.notifications_center') }}">
+                                <i class="fas fa-bell me-2"></i>Notifications
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 15px;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, currentColor 0%, rgba(255,255,255,0.2) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+.stat-card:hover .stat-icon {
+    transform: scale(1.1);
+}
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.expiring-item {
+    transition: transform 0.2s ease;
+}
+.expiring-item:hover {
+    transform: translateX(5px);
+}
+.action-btn {
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.card {
+    border-radius: 15px;
+}
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+</style>
+
+<script>
+// Update current time
+document.addEventListener('DOMContentLoaded', function() {
+    updateTime();
+    setInterval(updateTime, 1000);
+    animateCounters();
+    initializeCharts();
+    addInteractiveEffects();
+});
+
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleString();
+    document.getElementById('current-time').textContent = timeString;
+}
+
+function animateCounters() {
+    const counters = document.querySelectorAll('.stat-number');
+    counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target'));
+        const increment = target / 50;
+        let current = 0;
+        
+        const updateCounter = () => {
+            current += increment;
+            if (current < target) {
+                counter.textContent = Math.ceil(current);
+                setTimeout(updateCounter, 50);
+            } else {
+                counter.textContent = target;
+            }
+        };
+        updateCounter();
+    });
+}
+
+function initializeCharts() {
+    // Asset Status Doughnut Chart
+    const assetStatusCtx = document.getElementById('assetStatusChart').getContext('2d');
+    const assetStatusChart = new Chart(assetStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ status_labels|tojson|safe }},
+            datasets: [{
+                data: {{ status_counts|tojson|safe }},
+                backgroundColor: [
+                    '#28a745',  // Green for Active
+                    '#ffc107',  // Yellow for Repair
+                    '#dc3545',  // Red for Inactive
+                    '#6c757d'   // Gray for Unknown
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    borderWidth: 1
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+    
+    // Store chart instance for refresh functionality
+    window.assetStatusChart = assetStatusChart;
+}
+
+function addInteractiveEffects() {
+    // Add hover effects to cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Add click effects to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+}
+
+function refreshChart(chartId) {
+    if (window[chartId]) {
+        window[chartId].destroy();
+        initializeCharts();
+        showNotification('Chart refreshed successfully!', 'success');
+    }
+}
+
+function exportReport() {
+    showNotification('Report export feature coming soon!', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Add ripple effect styles
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}
