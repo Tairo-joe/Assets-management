@@ -9,3 +9,5 @@ reportlab
 Flask-Mail
 APScheduler
 werkzeug
+Flask
+gunicorn
