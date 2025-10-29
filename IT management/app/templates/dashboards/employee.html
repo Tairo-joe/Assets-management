@@ -1,0 +1,470 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-1">My Assets</h1>
+                    <p class="text-muted mb-0" id="current-time"></p>
+                </div>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="refreshAssets()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" onclick="showNotification('Asset request feature coming soon!', 'info')">
+                        <i class="fas fa-plus me-2"></i>Request Asset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3 text-primary fs-2">
+                        <i class="fas fa-laptop"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ my_assets|length }}">0</h2>
+                    <p class="stat-label text-muted mb-0">My Assets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3 text-success fs-2">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ my_assets|selectattr('status', 'equalto', 'Active')|list|length }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Active Assets</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3 text-warning fs-2">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ my_assets|selectattr('status', 'equalto', 'Repair')|list|length }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Under Repair</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card stat-card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon mx-auto mb-3 text-purple fs-2">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h2 class="stat-number" data-target="{{ my_assets|selectattr('warranty_expiry')|list|length }}">0</h2>
+                    <p class="stat-label text-muted mb-0">Under Warranty</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assets Table Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list me-2 text-primary"></i>Asset Details</h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" class="form-control form-control-sm" id="assetSearch" placeholder="Search assets..." aria-label="Search assets">
+                        <select class="form-select form-select-sm" id="statusFilter" aria-label="Filter status">
+                            <option value="">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Repair">Repair</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="assetsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Asset ID</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Brand</th>
+                                    <th scope="col">Model</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Purchase Date</th>
+                                    <th scope="col">Warranty</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for asset in my_assets %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-tag text-primary me-2"></i>
+                                            <strong>{{ asset.asset_id }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ asset.asset_type }}</span>
+                                    </td>
+                                    <td>{{ asset.brand }}</td>
+                                    <td>{{ asset.model }}</td>
+                                    <td>
+                                        {% if asset.status == 'Active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif asset.status == 'Repair' %}
+                                            <span class="badge bg-warning text-dark">Repair</span>
+                                        {% elif asset.status == 'Inactive' %}
+                                            <span class="badge bg-danger">Inactive</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ asset.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if asset.purchase_date %}
+                                            {{ asset.purchase_date.strftime('%Y-%m-%d') }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if asset.warranty_expiry %}
+                                            {{ asset.warranty_expiry.strftime('%Y-%m-%d') }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewAsset('{{ asset.asset_id }}')" aria-label="View details for {{ asset.asset_id }}">
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-info" onclick="reportIssue('{{ asset.asset_id }}')" aria-label="Report issue for {{ asset.asset_id }}">
+                                                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not my_assets %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                                            <h5>No Assets Assigned</h5>
+                                            <p>You don't have any assets assigned to you yet.</p>
+                                            <button type="button" class="btn btn-primary" onclick="showNotification('Asset request feature coming soon!', 'info')">
+                                                <i class="fas fa-plus me-2"></i>Request Asset
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Maintenance Approvals -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2 text-success"></i>Recent Maintenance</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light"><tr><th scope="col">Date</th><th scope="col">Asset</th><th scope="col">Status</th></tr></thead>
+                            <tbody>
+                            {% set my_asset_ids = [a.id for a in my_assets] %}
+                            {% for m in Maintenance.query.filter(Maintenance.asset_id.in_(my_asset_ids)).order_by(Maintenance.date.desc()).limit(10).all() %}
+                                <tr>
+                                    <td>{{ m.date }}</td>
+                                    <td>{{ m.asset.asset_id if m.asset else m.asset_id }}</td>
+                                    <td>{% if m.status == 'Approved' %}<span class="badge bg-success">Approved</span>{% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}</td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="3" class="text-muted">No recent maintenance records.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2 text-info"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-sm-6">
+                            <button type="button" class="btn btn-outline-primary w-100 action-btn" onclick="viewAssetHistory()">
+                                <i class="fas fa-history me-2"></i>View History
+                            </button>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <button type="button" class="btn btn-outline-success w-100 action-btn" onclick="showNotification('Maintenance request feature coming soon!', 'success')">
+                                <i class="fas fa-wrench me-2"></i>Request Maintenance
+                            </button>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <button type="button" class="btn btn-outline-warning w-100 action-btn" onclick="reportIssue()">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Report Issue
+                            </button>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <button type="button" class="btn btn-outline-info w-100 action-btn" onclick="showSupport()">
+                                <i class="fas fa-headset me-2"></i>Get Support
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 15px;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, currentColor 0%, rgba(255,255,255,0.2) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+.stat-card:hover .stat-icon {
+    transform: scale(1.1);
+}
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.table-responsive {
+    max-height: 400px;
+    overflow-y: auto;
+}
+.action-btn {
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.card {
+    border-radius: 15px;
+}
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+</style>
+
+<script>
+// Update current time
+document.addEventListener('DOMContentLoaded', function() {
+    updateTime();
+    setInterval(updateTime, 1000);
+    animateCounters();
+    initializeTable();
+    addInteractiveEffects();
+});
+
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleString();
+    document.getElementById('current-time').textContent = timeString;
+}
+
+function animateCounters() {
+    const counters = document.querySelectorAll('.stat-number');
+    counters.forEach(counter => {
+        const target = parseInt(counter.getAttribute('data-target'));
+        const increment = target / 50;
+        let current = 0;
+        
+        const updateCounter = () => {
+            current += increment;
+            if (current < target) {
+                counter.textContent = Math.ceil(current);
+                setTimeout(updateCounter, 50);
+            } else {
+                counter.textContent = target;
+            }
+        };
+        updateCounter();
+    });
+}
+
+function initializeTable() {
+    // Search functionality
+    const searchInput = document.getElementById('assetSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const table = document.getElementById('assetsTable');
+    
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedStatus = statusFilter.value;
+        const rows = table.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            if (row.cells.length === 1) return; // Skip the no assets message row
+            
+            const assetId = row.cells[0].textContent.toLowerCase();
+            const assetType = row.cells[1].textContent.toLowerCase();
+            const brand = row.cells[2].textContent.toLowerCase();
+            const model = row.cells[3].textContent.toLowerCase();
+            const status = row.cells[4].textContent.toLowerCase();
+            
+            const matchesSearch = assetId.includes(searchTerm) || 
+                                assetType.includes(searchTerm) || 
+                                brand.includes(searchTerm) || 
+                                model.includes(searchTerm);
+            
+            const matchesStatus = !selectedStatus || status.includes(selectedStatus.toLowerCase());
+            
+            if (matchesSearch && matchesStatus) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    searchInput.addEventListener('keyup', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+}
+
+function addInteractiveEffects() {
+    // Add hover effects to cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Add click effects to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+}
+
+function refreshAssets() {
+    location.reload();
+}
+
+function viewAsset(assetId) {
+    showNotification(`Viewing details for asset ${assetId}`, 'info');
+}
+
+function reportIssue(assetId = '') {
+    const message = assetId ? `Reporting issue for asset ${assetId}` : 'Opening issue report form';
+    showNotification(message, 'warning');
+}
+
+function viewAssetHistory() {
+    showNotification('Asset history feature coming soon!', 'info');
+}
+
+function showSupport() {
+    showNotification('Support system coming soon!', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Add ripple effect styles
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

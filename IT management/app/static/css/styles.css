@@ -1,0 +1,28 @@
+/* Global, restrained styles for a human-crafted look */
+/* Soft neutral background that complements white cards */
+body { background-color: #eef2f7; }
+
+.navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+.navbar-brand { font-weight: 700; letter-spacing: .2px; }
+.nav-link { font-weight: 500; margin-right: 10px; }
+.nav-link.active, .nav-link:hover { color: #0d6efd !important; }
+
+.card { border: 1px solid #e9ecef; border-radius: .75rem; box-shadow: none; }
+.card-header { background-color: #fff; border-bottom: 1px solid #eef1f5; }
+
+.alert { border-radius: .5rem; }
+
+.btn { border-radius: .5rem; }
+.btn-primary { background-color: #0d6efd; border-color: #0d6efd; }
+.btn-primary:hover { background-color: #0b5ed7; border-color: #0a58ca; }
+.btn-success { background-color: #198754; border-color: #198754; }
+.btn-success:hover { background-color: #157347; border-color: #146c43; }
+
+/* Login */
+.auth-card { max-width: 440px; margin: 48px auto; }
+.muted-text { color: #6c757d; }
+
+/* Dashboard */
+.kpi { border: 1px solid #eef1f5; }
+.kpi .value { font-weight: 700; font-size: 1.75rem; color: #2c3e50; }
+.kpi .label { color: #6c757d; text-transform: uppercase; font-size: .85rem; letter-spacing: .3px; }

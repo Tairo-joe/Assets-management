@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ action }} Employee</h2>
+<form method="post" class="w-50 mx-auto">
+  <div class="mb-3">
+    <label class="form-label">Name</label>
+    <input type="text" class="form-control" name="name" value="{{ emp.name if emp else '' }}" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Department</label>
+    <input type="text" class="form-control" name="department" value="{{ emp.department if emp else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Contact</label>
+    <input type="text" class="form-control" name="contact" value="{{ emp.contact if emp else '' }}">
+  </div>
+  <button class="btn btn-primary">{{ action }}</button>
+  <a href="{{ url_for('main.employees') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

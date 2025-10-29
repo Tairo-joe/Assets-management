@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="mb-1">Send Notifications</h1>
+      <p class="text-muted mb-0">Choose type, window, and recipients</p>
+    </div>
+    <div>
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.it_dashboard') }}">
+        <i class="fas fa-arrow-left me-2"></i>Back to IT Dashboard
+      </a>
+    </div>
+  </div>
+
+  <form method="post" class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Notification Type</label>
+          <select class="form-select" name="type">
+            <option value="warranty" selected>Warranty expiry</option>
+            <option value="license">License expiry</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Days Window</label>
+          <input type="number" class="form-control" name="days" placeholder="e.g. {{ warranty_days_default }} or {{ license_days_default }}">
+          <div class="form-text">Leave empty to use default for the chosen type.</div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check me-4">
+            <input class="form-check-input" type="checkbox" name="assignees_only" id="assignees_only" checked>
+            <label class="form-check-label" for="assignees_only">Send to assignees only</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="cc_admin_it" id="cc_admin_it">
+            <label class="form-check-label" for="cc_admin_it">CC Admin/IT</label>
+          </div>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Additional To recipients (comma-separated)</label>
+          <input type="text" class="form-control" name="additional_to_recipients" placeholder="to1@example.com, to2@company.com">
+          <div class="form-text">These addresses receive the notification directly, even if there are no assignees.</div>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Additional recipients to CC (comma-separated)</label>
+          <input type="text" class="form-control" name="additional_recipients" placeholder="alice@example.com, bob@company.com">
+        </div>
+      </div>
+    </div>
+    <div class="card-footer bg-white d-flex justify-content-end">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-paper-plane me-2"></i>Send Notifications
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

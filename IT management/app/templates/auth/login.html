@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="auth-bg"></div>
+<div class="auth-overlay"></div>
+<div class="container py-5 position-relative" style="z-index: 1;">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-4">
+      <div class="card border-0 rounded-lg overflow-hidden">
+        <div class="card-header bg-white text-center py-4 border-bottom">
+          <h2 class="mb-0">
+            Login
+          </h2>
+          <p class="mb-0 mt-2 text-muted">Access your IT Asset Management System</p>
+        </div>
+        <div class="card-body p-4">
+          <form method="post" id="loginForm">
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" name="username" id="username" placeholder="Username" required>
+              <label for="username">
+                <i class="fas fa-user me-2"></i>Username
+              </label>
+            </div>
+            <div class="form-floating mb-4">
+              <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+              <label for="password">
+                <i class="fas fa-lock me-2"></i>Password
+              </label>
+            </div>
+            <div class="d-grid mb-3">
+              <button type="submit" class="btn btn-primary btn-lg" id="loginBtn">
+                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                Sign In
+              </button>
+            </div>
+            <div class="text-center mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showPassword">
+                <label class="form-check-label" for="showPassword">
+                  Show Password
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="card-footer bg-white text-center py-3 border-top">
+          <p class="mb-0">Don't have an account?
+            <a href="{{ url_for('main.register') }}" class="text-decoration-none fw-bold text-primary ms-1">
+              Register
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.auth-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    url('{{ url_for('static', filename='img/login-bg.svg') }}');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  will-change: transform;
+}
+.auth-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.35));
+}
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+
+.btn-primary { transition: all 0.2s ease; }
+.btn-primary:hover { transform: translateY(-1px); }
+
+.form-floating > label {
+  padding-left: 3.5rem;
+}
+
+.form-floating > .form-control {
+  height: calc(3.5rem + 2px);
+  padding-left: 3.5rem;
+}
+
+.form-floating > .form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+#showPassword { cursor: pointer; }
+.spinner-border-sm { width: 1rem; height: 1rem; }
+</style>
+
+<script>
+// Show/hide password functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const toggle = document.getElementById('showPassword');
+  if (toggle) {
+    toggle.addEventListener('change', function() {
+      const passwordField = document.getElementById('password');
+      passwordField.type = this.checked ? 'text' : 'password';
+    });
+  }
+  // Focus on username field
+  const userField = document.getElementById('username');
+  if (userField) userField.focus();
+});
+
+// Form submission with loading state
+document.getElementById('loginForm').addEventListener('submit', function() {
+  const loginBtn = document.getElementById('loginBtn');
+  const spinner = loginBtn.querySelector('.spinner-border');
+  loginBtn.disabled = true;
+  spinner.classList.remove('d-none');
+});
+</script>
+{% endblock %}
