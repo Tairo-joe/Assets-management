@@ -130,6 +130,8 @@ def admin_dashboard():
     total_employees = Employee.query.count()
     total_licenses = SoftwareLicense.query.count()
     maintenance_count = Maintenance.query.count()
+    pending_maintenances = Maintenance.query.filter_by(status='Pending').order_by(Maintenance.date.desc()).limit(5).all()
+    recent_approved = Maintenance.query.filter_by(status='Approved').order_by(Maintenance.approved_at.desc()).limit(5).all()
     
     # Asset distribution by type
     asset_types = []
@@ -168,6 +170,15 @@ def it_dashboard():
         if lic.expiry_date:
             month = lic.expiry_date.month - 1  # 0-indexed
             expiry_counts[month] += 1
+    
+    # Monthly maintenance cost
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    monthly_costs = [0] * 12
+    maintenance_records = Maintenance.query.all()
+    for record in maintenance_records:
+        if record.date:
+            month = record.date.month - 1  # 0-indexed
+            monthly_costs[month] += record.cost or 0
     
     return render_template("dashboards/it.html", **locals())
 
@@ -253,7 +264,7 @@ def employee_delete(emp_id):
 @login_required
 @role_required("Admin", "IT", "Manager")
 def maintenance_list():
-    maintenances = Maintenance.query.order_by(Maintenance.date.desc()).all()
+    maintenances = Maintenance.query.order_by(Maintenance.date.asc()).all()
     return render_template("maintenance/list.html", maintenances=maintenances)
 
 @main.route("/maintenance/new", methods=["GET", "POST"])
@@ -266,6 +277,7 @@ def maintenance_new():
             date=datetime.strptime(request.form["date"], "%Y-%m-%d").date() if request.form.get("date") else None,
             description=request.form.get("description"),
             cost=request.form.get("cost") or 0,
+            status="Pending",
         )
         db.session.add(m)
         db.session.commit()
@@ -284,11 +296,27 @@ def maintenance_edit(mid):
         m.date = datetime.strptime(request.form["date"], "%Y-%m-%d").date() if request.form.get("date") else None
         m.description = request.form.get("description")
         m.cost = request.form.get("cost") or 0
+        # Keep status as-is unless explicitly changed elsewhere
         db.session.commit()
         flash("Maintenance updated", "success")
         return redirect(url_for("main.maintenance_list"))
     assets = Asset.query.all()
     return render_template("maintenance/form.html", action="Edit", assets=assets, m=m)
+
+@main.route("/maintenance/<int:mid>/approve", methods=["POST"])
+@login_required
+@role_required("Admin")
+def maintenance_approve(mid):
+    m = Maintenance.query.get_or_404(mid)
+    if m.status == "Approved":
+        flash("Already approved", "info")
+        return redirect(url_for("main.maintenance_list"))
+    m.status = "Approved"
+    m.approved_by = current_user.id
+    m.approved_at = datetime.utcnow()
+    db.session.commit()
+    flash("Maintenance approved", "success")
+    return redirect(url_for("main.admin_dashboard"))
 
 @main.route("/maintenance/<int:mid>/delete", methods=["POST"])
 @login_required

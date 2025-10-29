@@ -125,6 +125,49 @@
             </a>
           </div>
         </div>
+        <hr>
+        <h6 class="mb-3">Pending Maintenance Approvals</h6>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light"><tr><th scope="col">ID</th><th scope="col">Asset</th><th scope="col">Date</th><th scope="col">Description</th><th scope="col" class="text-end">Action</th></tr></thead>
+            <tbody>
+              {% for pm in pending_maintenances %}
+              <tr>
+                <td>{{ pm.id }}</td>
+                <td>{{ pm.asset.asset_id if pm.asset else pm.asset_id }}</td>
+                <td>{{ pm.date }}</td>
+                <td>{{ pm.description }}</td>
+                <td class="text-end">
+                  <form method="post">
+                    <button type="submit" formaction="{{ url_for('main.maintenance_approve', mid=pm.id) }}" class="btn btn-sm btn-success">Approve</button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5" class="text-muted">No pending requests.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <h6 class="mb-3 mt-4">Recently Approved</h6>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light"><tr><th scope="col">ID</th><th scope="col">Asset</th><th scope="col">Approved At</th><th scope="col">Approved By</th></tr></thead>
+            <tbody>
+              {% for ra in recent_approved %}
+              <tr>
+                <td>{{ ra.id }}</td>
+                <td>{{ ra.asset.asset_id if ra.asset else ra.asset_id }}</td>
+                <td>{{ ra.approved_at }}</td>
+                <td>{{ ra.approved_by }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" class="text-muted">No approvals yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

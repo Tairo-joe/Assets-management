@@ -50,6 +50,9 @@ class Maintenance(db.Model):
     date = db.Column(db.Date, default=datetime.utcnow)
     description = db.Column(db.Text)
     cost = db.Column(db.Float)
+    status = db.Column(db.String(20), default="Pending")
+    approved_by = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
 
 class SoftwareLicense(db.Model):
     id = db.Column(db.Integer, primary_key=True)

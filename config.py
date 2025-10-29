@@ -1,11 +1,16 @@
 import os
+BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     """Base configuration."""
 
     # Change this in production!
     SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///site.db")
+    # Use instance/site.db by default to avoid cwd-dependent paths
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DATABASE_URL",
+        f"sqlite:///{os.path.join(BASEDIR, 'instance', 'site.db')}"
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Email configuration

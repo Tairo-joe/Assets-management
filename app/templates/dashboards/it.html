@@ -124,6 +124,20 @@
         </div>
     </div>
 
+    <!-- Monthly Maintenance Cost Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-white d-flex align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2 text-success"></i>Monthly Maintenance Cost (GH₵)</h5>
+                </div>
+                <div class="card-body chart-area">
+                    <canvas id="maintenanceCostChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Actions Section -->
     <div class="row">
         <div class="col-12">
@@ -280,6 +294,59 @@ function initializeCharts() {
             }
         }
     });
+    
+    // Monthly Maintenance Cost Line Chart
+    const costLabels = {{ months|tojson|safe }};
+    const costData = {{ monthly_costs|tojson|safe }};
+    const costSum = (costData || []).reduce((a,b)=>a+b,0);
+    const costCanvas = document.getElementById('maintenanceCostChart');
+    if (costCanvas) {
+        if (!costSum) {
+            costCanvas.replaceWith(Object.assign(document.createElement('div'), { className: 'text-muted text-center py-5', innerText: 'No maintenance cost data' }));
+        } else {
+            window.maintenanceCostChart = new Chart(costCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: costLabels,
+                    datasets: [{
+                        label: 'Maintenance Cost (GH₵)',
+                        data: costData,
+                        borderColor: '#4e79a7',
+                        backgroundColor: 'rgba(78, 121, 167, 0.12)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const v = ctx.parsed.y || 0;
+                                    return ' GH₵' + Number(v).toLocaleString('en-GH');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: v => 'GH₵' + Number(v).toLocaleString('en-GH') },
+                            grid: { color: 'rgba(0,0,0,0.08)' }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    }
 }
 
 function addInteractiveEffects() {
