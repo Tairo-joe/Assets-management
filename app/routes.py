@@ -56,13 +56,30 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
     if request.method == "POST":
-        username = request.form["username"]
-        email = request.form["email"]
+        username = request.form["username"].strip()
+        email = request.form["email"].strip()
         password = request.form["password"]
-        role = request.form.get("role", "Employee")
+        want_admin = bool(request.form.get("is_admin"))
+        admin_code = request.form.get("admin_code", "").strip()
+        if not username or not email or not password:
+            flash("All fields are required", "warning")
+            return redirect(url_for("main.register"))
+        if len(password) < 8:
+            flash("Password must be at least 8 characters", "warning")
+            return redirect(url_for("main.register"))
         if User.query.filter((User.username == username)|(User.email==email)).first():
             flash("User already exists", "danger")
             return redirect(url_for("main.register"))
+        role = "Employee"
+        if want_admin:
+            configured = current_app.config.get("ADMIN_REGISTRATION_CODE")
+            if not configured:
+                flash("Admin registration code not configured", "danger")
+                return redirect(url_for("main.register"))
+            if admin_code != configured:
+                flash("Invalid admin registration code", "danger")
+                return redirect(url_for("main.register"))
+            role = "Admin"
         user = User(username=username, email=email, role=role)
         user.set_password(password)
         db.session.add(user)
@@ -79,10 +96,15 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
         user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
+        
+        if not user:
+            flash("Invalid username - User not found", "danger")
+        elif not user.check_password(password):
+            flash("Invalid password - Please try again", "danger")
+        else:
             login_user(user)
             return redirect(url_for("main.dashboard"))
-        flash("Invalid credentials", "danger")
+            
         return redirect(url_for("main.login"))
     return render_template("auth/login.html")
 
@@ -153,6 +175,54 @@ def admin_dashboard():
     
     return render_template("dashboards/admin.html", **locals())
 
+@main.route("/admin/users")
+@login_required
+@role_required("Admin")
+def admin_users():
+    users = User.query.order_by(User.id.asc()).all()
+    return render_template("users/manage.html", users=users)
+
+@main.route("/admin/users/<int:user_id>/role", methods=["POST"])
+@login_required
+@role_required("Admin")
+def admin_user_set_role(user_id):
+    user = User.query.get_or_404(user_id)
+    new_role = request.form.get("role", "Employee")
+    if new_role not in ["Admin", "IT", "Manager", "Employee"]:
+        flash("Invalid role", "danger")
+        return redirect(url_for("main.admin_users"))
+    user.role = new_role
+    db.session.commit()
+    flash("User role updated", "success")
+    return redirect(url_for("main.admin_users"))
+
+@main.route("/admin/users/<int:user_id>/reset-password", methods=["POST"])
+@login_required
+@role_required("Admin")
+def admin_user_reset_password(user_id):
+    user = User.query.get_or_404(user_id)
+    new_password = request.form.get("new_password", "")
+    if len(new_password) < 8:
+        flash("Password must be at least 8 characters", "warning")
+        return redirect(url_for("main.admin_users"))
+    user.set_password(new_password)
+    db.session.commit()
+    flash("Password reset successfully", "success")
+    return redirect(url_for("main.admin_users"))
+
+@main.route("/admin/users/<int:user_id>/delete", methods=["POST"])
+@login_required
+@role_required("Admin")
+def admin_user_delete(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash("You cannot delete your own account", "warning")
+        return redirect(url_for("main.admin_users"))
+    db.session.delete(user)
+    db.session.commit()
+    flash("User deleted", "info")
+    return redirect(url_for("main.admin_users"))
+
 @main.route("/it/dashboard")
 @login_required
 @role_required("Admin", "IT")
@@ -217,7 +287,7 @@ def employee_dashboard():
 @login_required
 @role_required("Admin", "IT", "Manager")
 def employees():
-    employees = Employee.query.all()
+    employees = Employee.query.order_by(Employee.id.asc()).all()
     return render_template("employees/list.html", employees=employees)
 
 @main.route("/employees/new", methods=["GET", "POST"])
@@ -332,7 +402,7 @@ def maintenance_delete(mid):
 @login_required
 @role_required("Admin", "IT", "Manager")
 def licenses():
-    licenses = SoftwareLicense.query.all()
+    licenses = SoftwareLicense.query.order_by(SoftwareLicense.id.asc()).all()
     return render_template("licenses/list.html", licenses=licenses)
 
 @main.route("/licenses/new", methods=["GET", "POST"])
@@ -384,7 +454,7 @@ def license_delete(lid):
 @login_required
 @role_required("Admin", "IT", "Manager")
 def assets():
-    assets = Asset.query.all()
+    assets = Asset.query.order_by(Asset.id.asc()).all()
     return render_template("assets/list.html", assets=assets)
 
 @main.route("/assets/new", methods=["GET", "POST"])

@@ -29,3 +29,4 @@ class Config:
     HR_API_KEY = os.getenv('HR_API_KEY', 'hr-integration-key-123')
     HR_WEBHOOK_SECRET = os.getenv('HR_WEBHOOK_SECRET', 'webhook-secret-456')
     HR_SYSTEM_URL = os.getenv('HR_SYSTEM_URL', 'http://localhost:3000')
+    ADMIN_REGISTRATION_CODE = os.getenv('ADMIN_REGISTRATION_CODE')

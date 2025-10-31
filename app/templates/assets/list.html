@@ -15,14 +15,14 @@
 <table class="table table-hover">
   <thead class="table-light">
     <tr>
-      <th>ID</th><th>Type</th><th>Brand</th><th>Model</th><th>Status</th><th>Assigned To</th>
+      <th>No.</th><th>ID</th><th>Type</th><th>Brand</th><th>Model</th><th>Status</th><th>Assigned To</th>
       {% if current_user.role in ['Admin', 'IT'] %}<th>Actions</th>{% endif %}
     </tr>
   </thead>
   <tbody>
   {% for a in assets %}
     <tr>
-      <td>{{ a.asset_id }}</td><td>{{ a.asset_type }}</td><td>{{ a.brand }}</td><td>{{ a.model }}</td><td>{{ a.status }}</td><td>{{ a.employee.name if a.employee else '' }}</td>
+      <td>{{ loop.index }}</td><td>{{ a.asset_id }}</td><td>{{ a.asset_type }}</td><td>{{ a.brand }}</td><td>{{ a.model }}</td><td>{{ a.status }}</td><td>{{ a.employee.name if a.employee else '' }}</td>
       {% if current_user.role in ['Admin', 'IT'] %}
         <td>
           <a href="{{ url_for('main.asset_edit', asset_id=a.id) }}" class="btn btn-sm btn-primary">Edit</a>

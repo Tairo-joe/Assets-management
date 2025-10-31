@@ -13,9 +13,9 @@
   </div>
 </div>
 <table class="table table-sm table-hover">
- <thead class="table-light"><tr><th>ID</th><th>Software</th><th>Key</th><th>Expiry</th><th>Assigned To</th>{% if current_user.role in ['Admin', 'IT'] %}<th>Actions</th>{% endif %}</tr></thead>
+ <thead class="table-light"><tr><th>No.</th><th>ID</th><th>Software</th><th>Key</th><th>Expiry</th><th>Assigned To</th>{% if current_user.role in ['Admin', 'IT'] %}<th>Actions</th>{% endif %}</tr></thead>
  <tbody>
- {% for l in licenses %}<tr><td>{{ l.id }}</td><td>{{ l.software_name }}</td><td>{{ l.license_key }}</td><td>{{ l.expiry_date }}</td><td>{{ l.employee.name if l.employee else '' }}</td>
+ {% for l in licenses %}<tr><td>{{ loop.index }}</td><td>{{ l.id }}</td><td>{{ l.software_name }}</td><td>{{ l.license_key }}</td><td>{{ l.expiry_date }}</td><td>{{ l.employee.name if l.employee else '' }}</td>
   {% if current_user.role in ['Admin', 'IT'] %}
     <td>
       <a href="{{ url_for('main.license_edit', lid=l.id) }}" class="btn btn-sm btn-primary">Edit</a>

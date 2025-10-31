@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="mb-4">User Management</h2>
+<p class="text-muted">Only Admins can access this page. Manage user roles, reset passwords, and delete accounts.</p>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Change Role</th>
+        <th>Reset Password</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ u.username }}</td>
+        <td>{{ u.email }}</td>
+        <td><span class="badge bg-secondary">{{ u.role }}</span></td>
+        <td>
+          <form class="d-flex gap-2" method="post" action="{{ url_for('main.admin_user_set_role', user_id=u.id) }}">
+            <select class="form-select" name="role" required>
+              <option value="Employee" {% if u.role=='Employee' %}selected{% endif %}>Employee</option>
+              <option value="Manager" {% if u.role=='Manager' %}selected{% endif %}>Manager</option>
+              <option value="IT" {% if u.role=='IT' %}selected{% endif %}>IT</option>
+              <option value="Admin" {% if u.role=='Admin' %}selected{% endif %}>Admin</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Update</button>
+          </form>
+        </td>
+        <td>
+          <form class="d-flex gap-2" method="post" action="{{ url_for('main.admin_user_reset_password', user_id=u.id) }}">
+            <input type="password" class="form-control" name="new_password" minlength="8" placeholder="New password" required>
+            <button type="submit" class="btn btn-warning">Reset</button>
+          </form>
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('main.admin_user_delete', user_id=u.id) }}" onsubmit="return confirm('Delete user {{ u.username }}? This cannot be undone.');">
+            <button type="submit" class="btn btn-outline-danger w-100" {% if u.id == current_user.id %}disabled title="You cannot delete your own account"{% endif %}>Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

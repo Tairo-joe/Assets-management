@@ -5,6 +5,7 @@ from flask_login import LoginManager, current_user, login_required
 import sqlalchemy as sa
 import logging
 import sys
+import os
 from dotenv import load_dotenv
 
 # Optional Flask-Mail import
@@ -27,7 +28,9 @@ def create_app():
     app = Flask(__name__)
 
     # Configurations
-    load_dotenv()
+    # Load .env from project root reliably (../.env from this file)
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    load_dotenv(os.path.join(base_dir, '.env'))
     app.config.from_object("config.Config")
 
     # Extensions

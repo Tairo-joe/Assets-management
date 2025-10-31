@@ -13,9 +13,9 @@
   </div>
 </div>
 <table class="table table-sm table-hover">
-  <thead class="table-light"><tr><th>ID</th><th>Asset</th><th>Date</th><th>Description</th><th>Cost</th><th>Status</th>{% if current_user.role in ['Admin', 'IT'] %}<th>Actions</th>{% endif %}</tr></thead>
+  <thead class="table-light"><tr><th>No.</th><th>Asset</th><th>Date</th><th>Description</th><th>Cost</th><th>Status</th>{% if current_user.role in ['Admin', 'IT'] %}<th>Actions</th>{% endif %}</tr></thead>
   <tbody>
-  {% for m in maintenances %}<tr><td>{{ m.id }}</td><td>{{ m.asset.asset_id if m.asset else '' }}</td><td>{{ m.date }}</td><td>{{ m.description }}</td><td>{{ m.cost|ghs }}</td>
+  {% for m in maintenances %}<tr><td>{{ loop.index }}</td><td>{{ m.asset.asset_id if m.asset else '' }}</td><td>{{ m.date }}</td><td>{{ m.description }}</td><td>{{ m.cost|ghs }}</td>
   <td>{% if m.status == 'Approved' %}<span class="badge bg-success">Approved</span>{% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}</td>
   {% if current_user.role in ['Admin', 'IT'] %}
     <td>

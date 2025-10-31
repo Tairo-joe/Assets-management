@@ -13,9 +13,9 @@
   </div>
 </div>
 <table class="table table-sm table-hover">
- <thead class="table-light"><tr><th>ID</th><th>Name</th><th>Department</th><th>Contact</th>{% if current_user.role in ['Admin', 'IT'] %}<th>Actions</th>{% endif %}</tr></thead>
+ <thead class="table-light"><tr><th>No.</th><th>Name</th><th>Department</th><th>Contact</th>{% if current_user.role in ['Admin', 'IT'] %}<th>Actions</th>{% endif %}</tr></thead>
  <tbody>
- {% for e in employees %}<tr><td>{{ e.id }}</td><td>{{ e.name }}</td><td>{{ e.department }}</td><td>{{ e.contact }}</td>
+ {% for e in employees %}<tr><td>{{ loop.index }}</td><td>{{ e.name }}</td><td>{{ e.department }}</td><td>{{ e.contact }}</td>
   {% if current_user.role in ['Admin', 'IT'] %}
     <td>
       <a href="{{ url_for('main.employee_edit', emp_id=e.id) }}" class="btn btn-sm btn-primary">Edit</a>
