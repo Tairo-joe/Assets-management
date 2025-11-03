@@ -463,8 +463,8 @@ def assets():
 def asset_new():
     if request.method == "POST":
         data = request.form
+        # Create the asset first without the asset_id
         asset = Asset(
-            asset_id=data["asset_id"],
             asset_type=data.get("asset_type"),
             brand=data.get("brand"),
             model=data.get("model"),
@@ -474,10 +474,21 @@ def asset_new():
             status=data.get("status"),
             assigned_to=data.get("assigned_to") or None,
         )
+        
+        # Add to session to get the auto-incremented ID
         db.session.add(asset)
+        db.session.flush()  # This will assign an ID to the asset
+        
+        # Generate asset_id if not provided
+        if not data.get("asset_id"):
+            asset.asset_id = f"AST-{asset.id:05d}"  # Format as AST-00001, AST-00002, etc.
+        else:
+            asset.asset_id = data["asset_id"]
+            
         db.session.commit()
-        flash("Asset added", "success")
+        flash("Asset added successfully", "success")
         return redirect(url_for("main.assets"))
+        
     employees = Employee.query.all()
     return render_template("assets/form.html", employees=employees, action="Add")
 
